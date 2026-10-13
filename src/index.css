@@ -1,0 +1,53 @@
+:root {
+  --volcan-primario: peru;
+  --volcan-oscuro: #17191a;
+  --volcan-fondo: #f7f1e8;
+  --volcan-tarjeta: #948383;
+}
+
+body {
+  color: var(--volcan-oscuro);
+  background: var(--volcan-fondo);
+  min-height: 100vh;
+}
+
+.navbar-volcan {
+  background: var(--volcan-primario);
+}
+
+.navbar-volcan .navbar-brand img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.navbar-volcan .nav-link {
+  color: #fff;
+  border-radius: 0.5rem;
+}
+
+.navbar-volcan .nav-link:hover,
+.navbar-volcan .nav-link.active {
+  color: #fff;
+  background: #000;
+}
+
+.hero-volcan {
+  background: rgb(95, 61, 61);
+  color: #fff;
+  padding: 4rem 0;
+}
+
+.footer-volcan {
+  background: var(--volcan-primario);
+  margin-top: 2.5rem;
+}
+
+.footer-volcan a {
+  color: var(--volcan-oscuro);
+}
+
+.tarjeta-producto img {
+  height: 240px;
+  object-fit: cover;
+}
