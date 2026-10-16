@@ -6,7 +6,7 @@ import {
   validarNombre,
   validarTelefono,
   validarMinimo
-} from "./validaciones";
+} from "../../utils/validaciones";
 
 describe("validaciones", () => {
   it("validarObligatorio rechaza vacio", () => {

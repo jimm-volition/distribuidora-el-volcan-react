@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
-import CampoFormulario from "./CampoFormulario";
+import CampoFormulario from "../../components/CampoFormulario";
 
 describe("CampoFormulario", () => {
   it("muestra el mensaje de error cuando se pasa la prop error", () => {

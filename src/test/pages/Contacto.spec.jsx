@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
-import Contacto from "./Contacto";
+import Contacto from "../../pages/Contacto";
 
 describe("Contacto", () => {
   it("muestra errores al enviar el formulario vacio", async () => {
