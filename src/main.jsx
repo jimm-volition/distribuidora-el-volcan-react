@@ -3,9 +3,12 @@ import { BrowserRouter } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import './index.css'
 import App from './App.jsx'
+import CarritoProvider from './context/CarritoProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
-    <App />
+    <CarritoProvider>
+      <App />
+    </CarritoProvider>
   </BrowserRouter>
 )
