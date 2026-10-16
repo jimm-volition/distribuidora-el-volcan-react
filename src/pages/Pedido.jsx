@@ -4,6 +4,7 @@ import Carrito from "../components/Carrito";
 import CampoFormulario from "../components/CampoFormulario";
 import { useCarrito } from "../context/useCarrito";
 import { formatearPrecio } from "../utils/precio";
+import { validarEmail, validarNombre, validarObligatorio, validarTelefono } from "../utils/validaciones";
 
 const formularioInicial = {
   nombre: "",
@@ -19,17 +20,50 @@ function Pedido() {
   const { items, total, quitarProducto, cambiarCantidad, vaciarCarrito, cantidadTotal } = useCarrito();
   const [cliente, setCliente] = useState(formularioInicial);
   const [confirmacion, setConfirmacion] = useState(null);
+  const [errores, setErrores] = useState({});
   const [error, setError] = useState("");
+
+  const validadores = {
+    nombre: validarNombre,
+    telefono: validarTelefono,
+    email: validarEmail,
+    direccion: validarObligatorio,
+    comuna: validarObligatorio,
+  };
+
+  function validarCampo(campo, valor) {
+    if (campo === "pago") {
+      return ["efectivo", "transferencia", "tarjeta"].includes(valor)
+        ? ""
+        : "Selecciona una forma de pago válida.";
+    }
+    return validadores[campo] ? validadores[campo](valor) : "";
+  }
 
   function manejarCambio(campo, valor) {
     setCliente((actual) => ({ ...actual, [campo]: valor }));
     if (error) setError("");
+    if (Object.prototype.hasOwnProperty.call(errores, campo)) {
+      setErrores((actuales) => ({ ...actuales, [campo]: validarCampo(campo, valor) }));
+    }
   }
 
   function manejarEnvio(evento) {
     evento.preventDefault();
+
+    const nuevosErrores = Object.fromEntries(
+      Object.entries(validadores).map(([campo, validar]) => [campo, validar(cliente[campo])]),
+    );
+    nuevosErrores.pago = validarCampo("pago", cliente.pago);
+    setErrores(nuevosErrores);
+
+    const formularioInvalido = Object.values(nuevosErrores).some(Boolean);
     if (items.length === 0) {
       setError("Agrega al menos un producto antes de confirmar el pedido.");
+      return;
+    }
+    if (formularioInvalido) {
+      setError("Revisa los campos marcados antes de confirmar el pedido.");
       return;
     }
 
@@ -37,6 +71,7 @@ function Pedido() {
     setConfirmacion({ numero: numeroPedido, nombre: cliente.nombre, total, cantidad: cantidadTotal });
     vaciarCarrito();
     setCliente(formularioInicial);
+    setErrores({});
     setError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -91,12 +126,13 @@ function Pedido() {
         <section className="col-12 col-lg-5">
           <div className="card pedido-panel p-3 p-md-4">
             <h2 className="h4 mb-3">Datos de entrega</h2>
-            <form onSubmit={manejarEnvio}>
+            <form onSubmit={manejarEnvio} noValidate>
               <CampoFormulario
                 id="nombre"
                 etiqueta="Nombre completo"
                 valor={cliente.nombre}
                 onCambiar={manejarCambio}
+                error={errores.nombre}
                 required
                 autoComplete="name"
               />
@@ -106,6 +142,7 @@ function Pedido() {
                 tipo="tel"
                 valor={cliente.telefono}
                 onCambiar={manejarCambio}
+                error={errores.telefono}
                 required
                 autoComplete="tel"
                 placeholder="+56 9 1234 5678"
@@ -116,6 +153,7 @@ function Pedido() {
                 tipo="email"
                 valor={cliente.email}
                 onCambiar={manejarCambio}
+                error={errores.email}
                 required
                 autoComplete="email"
               />
@@ -124,6 +162,7 @@ function Pedido() {
                 etiqueta="Dirección de despacho"
                 valor={cliente.direccion}
                 onCambiar={manejarCambio}
+                error={errores.direccion}
                 required
                 autoComplete="street-address"
                 placeholder="Calle, número y departamento"
@@ -133,6 +172,7 @@ function Pedido() {
                 etiqueta="Comuna"
                 valor={cliente.comuna}
                 onCambiar={manejarCambio}
+                error={errores.comuna}
                 required
                 placeholder="Ej. Chillán"
               />
@@ -149,11 +189,12 @@ function Pedido() {
               </div>
               <div className="mb-3">
                 <label htmlFor="pago" className="form-label fw-bold">Forma de pago</label>
-                <select id="pago" className="form-select" value={cliente.pago} onChange={(evento) => manejarCambio("pago", evento.target.value)}>
+                <select id="pago" className={`form-select ${errores.pago ? "is-invalid" : ""}`} aria-invalid={Boolean(errores.pago)} value={cliente.pago} onChange={(evento) => manejarCambio("pago", evento.target.value)}>
                   <option value="efectivo">Efectivo al recibir</option>
                   <option value="transferencia">Transferencia bancaria</option>
                   <option value="tarjeta">Tarjeta al recibir</option>
                 </select>
+                {errores.pago && <div className="invalid-feedback d-block">{errores.pago}</div>}
               </div>
 
               <div className="resumen-total d-flex justify-content-between align-items-center mb-3 p-3">

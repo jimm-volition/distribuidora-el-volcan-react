@@ -10,10 +10,11 @@ function CampoFormulario({ id, etiqueta, tipo = "text", valor, onCambiar, error,
         value={valor}
         onChange={(evento) => onCambiar(id, evento.target.value)}
         aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
         {...resto}
       />
       {ayuda && <div className="form-text">{ayuda}</div>}
-      {error && <div className="invalid-feedback">{error}</div>}
+      {error && <div id={`${id}-error`} className="invalid-feedback">{error}</div>}
     </div>
   );
 }
