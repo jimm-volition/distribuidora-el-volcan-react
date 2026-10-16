@@ -1,14 +1,19 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import Hero from "../components/Hero";
 import TarjetaInfo from "../components/TarjetaInfo";
 import ListaProductos from "../components/ListaProductos";
 import { productos } from "../data/productos";
+import { useCarrito } from "../context/useCarrito";
 
 function Inicio() {
   const destacados = productos.filter((producto) => producto.destacado);
+  const { agregarProducto } = useCarrito();
+  const [mensaje, setMensaje] = useState("");
 
   function agregar(producto) {
-    console.log("Producto seleccionado:", producto.nombre);
+    agregarProducto(producto);
+    setMensaje(`${producto.nombre} se agregó al carrito.`);
   }
 
   return (
@@ -35,7 +40,11 @@ function Inicio() {
         </section>
 
         <section>
-          <h2>Cilindros más pedidos</h2>
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h2 className="mb-0">Cilindros más pedidos</h2>
+            <Link to="/catalogo">Ver todos los productos</Link>
+          </div>
+          {mensaje && <p className="alert alert-success" role="status">{mensaje} <Link className="alert-link" to="/pedido">Ver carrito</Link></p>}
           <ListaProductos productos={destacados} onAgregar={agregar} />
         </section>
       </main>

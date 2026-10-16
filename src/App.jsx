@@ -9,11 +9,14 @@ import Nosotros from "./pages/Nosotros";
 import Login from "./pages/Login";
 import Contacto from "./pages/Contacto";
 import NoEncontrada from "./pages/NoEncontrada";
+import { useCarrito } from "./context/useCarrito";
 
 function App() {
+  const { cantidadTotal } = useCarrito();
+
   return (
     <>
-      <Navegacion />
+      <Navegacion cantidadCarrito={cantidadTotal} />
       <Routes>
         <Route path="/" element={<Inicio />} />
         <Route path="/catalogo" element={<Catalogo />} />
