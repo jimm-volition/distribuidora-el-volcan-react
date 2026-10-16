@@ -1,4 +1,4 @@
-import { formatearPrecio } from "./precio";
+import { formatearPrecio } from "../../utils/precio";
 
 describe("formatearPrecio", () => {
   it("formatea un valor tipico en pesos chilenos", () => {
