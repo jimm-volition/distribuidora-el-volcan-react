@@ -14,7 +14,16 @@ export default function AdminProductos() {
   }
 
   useEffect(() => {
-    cargar().catch((e) => setError(e.message));
+    let activo = true;
+    listarProductos()
+      .then((datos) => {
+        if (activo) setProductos(datos);
+      })
+      .catch((e) => {
+        if (activo) setError(e.message);
+      });
+
+    return () => { activo = false; };
   }, []);
 
   function cambiar(campo, valor) {

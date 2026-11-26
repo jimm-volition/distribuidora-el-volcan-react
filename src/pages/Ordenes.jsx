@@ -16,7 +16,16 @@ export default function Ordenes() {
   }
 
   useEffect(() => {
-    cargar().catch((e) => setError(e.message));
+    let activo = true;
+    listarBoletas()
+      .then((datos) => {
+        if (activo) setBoletas(datos);
+      })
+      .catch((e) => {
+        if (activo) setError(e.message);
+      });
+
+    return () => { activo = false; };
   }, []);
 
   async function actualizar(id, estado) {
