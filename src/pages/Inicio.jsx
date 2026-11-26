@@ -19,7 +19,7 @@ function Inicio() {
     if (!import.meta.env.VITE_API_URL) return;
     listarProductos()
       .then((lista) => {
-        const cilindros = lista.filter((producto) => producto.categoria === "Cilindros de gas");
+        const cilindros = lista.filter((producto) => producto.categoria?.toLowerCase() === "cilindros de gas");
         setDestacados((cilindros.length ? cilindros : lista).slice(0, 4));
       })
       .catch((e) => setError(e.message));
