@@ -1,15 +1,23 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Hero from "../components/Hero";
 import TarjetaInfo from "../components/TarjetaInfo";
 import ListaProductos from "../components/ListaProductos";
 import { productos } from "../data/productos";
+import { listarProductos } from "../services/productoService";
 import { useCarrito } from "../context/useCarrito";
 
 function Inicio() {
-  const destacados = productos.filter((producto) => producto.destacado);
+  const [destacados, setDestacados] = useState(productos.filter((producto) => producto.destacado));
   const { agregarProducto } = useCarrito();
   const [mensaje, setMensaje] = useState("");
+
+  useEffect(() => {
+    if (!import.meta.env.VITE_API_URL) return;
+    listarProductos()
+      .then((lista) => setDestacados(lista.filter((producto) => producto.destacado)))
+      .catch(() => {});
+  }, []);
 
   function agregar(producto) {
     agregarProducto(producto);

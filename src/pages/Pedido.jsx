@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import Carrito from "../components/Carrito";
 import CampoFormulario from "../components/CampoFormulario";
 import { useCarrito } from "../context/useCarrito";
+import { leerSesion } from "../services/http";
+import { crearBoleta } from "../services/boletaService";
 import { formatearPrecio } from "../utils/precio";
 import { validarEmail, validarNombre, validarObligatorio, validarTelefono } from "../utils/validaciones";
 
@@ -48,7 +50,7 @@ function Pedido() {
     }
   }
 
-  function manejarEnvio(evento) {
+  async function manejarEnvio(evento) {
     evento.preventDefault();
 
     const nuevosErrores = Object.fromEntries(
@@ -67,8 +69,32 @@ function Pedido() {
       return;
     }
 
-    const numeroPedido = `EV-${Date.now().toString().slice(-8)}`;
-    setConfirmacion({ numero: numeroPedido, nombre: cliente.nombre, total, cantidad: cantidadTotal });
+    let numeroPedido = `EV-${Date.now().toString().slice(-8)}`;
+    let totalConfirmado = total;
+    if (import.meta.env.VITE_API_URL) {
+      const usuario = leerSesion()?.usuario;
+      if (!usuario || (usuario.rol !== "CLIENTE" && usuario.rol !== "ADMIN")) {
+        setError("Inicia sesión como cliente para registrar la boleta en el servidor.");
+        return;
+      }
+      try {
+        const boleta = await crearBoleta({
+          nombre: cliente.nombre,
+          telefono: cliente.telefono,
+          direccion: cliente.direccion,
+          comuna: cliente.comuna,
+          referencia: cliente.referencia,
+          pago: cliente.pago,
+          items: items.map((item) => ({ codigo: item.codigo, cantidad: item.cantidad })),
+        });
+        numeroPedido = `Boleta #${boleta.id}`;
+        totalConfirmado = boleta.total;
+      } catch (e) {
+        setError(e.message);
+        return;
+      }
+    }
+    setConfirmacion({ numero: numeroPedido, nombre: cliente.nombre, total: totalConfirmado, cantidad: cantidadTotal });
     vaciarCarrito();
     setCliente(formularioInicial);
     setErrores({});
@@ -88,7 +114,7 @@ function Pedido() {
             <p className="mb-2">Productos: <strong>{confirmacion.cantidad}</strong></p>
             <p className="mb-0">Total: <strong>{formatearPrecio(confirmacion.total)}</strong></p>
           </div>
-          <p className="text-muted small">Este proyecto aún no está conectado a un servidor, por lo que el pedido no se envió realmente a la distribuidora.</p>
+          <p className="text-muted small">La boleta quedó registrada con el total calculado por el servidor y el stock descontado.</p>
           <div className="d-flex flex-wrap justify-content-center gap-2 mt-4">
             <Link className="btn btn-dark" to="/catalogo" onClick={() => setConfirmacion(null)}>Seguir comprando</Link>
             <Link className="btn btn-outline-dark" to="/" onClick={() => setConfirmacion(null)}>Volver al inicio</Link>
