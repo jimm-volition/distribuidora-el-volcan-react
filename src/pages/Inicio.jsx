@@ -8,15 +8,21 @@ import { listarProductos } from "../services/productoService";
 import { useCarrito } from "../context/useCarrito";
 
 function Inicio() {
-  const [destacados, setDestacados] = useState(productos.filter((producto) => producto.destacado));
+  const [destacados, setDestacados] = useState(
+    import.meta.env.VITE_API_URL ? [] : productos.filter((producto) => producto.destacado),
+  );
+  const [error, setError] = useState("");
   const { agregarProducto } = useCarrito();
   const [mensaje, setMensaje] = useState("");
 
   useEffect(() => {
     if (!import.meta.env.VITE_API_URL) return;
     listarProductos()
-      .then((lista) => setDestacados(lista.filter((producto) => producto.destacado)))
-      .catch(() => {});
+      .then((lista) => {
+        const cilindros = lista.filter((producto) => producto.categoria === "Cilindros de gas");
+        setDestacados((cilindros.length ? cilindros : lista).slice(0, 4));
+      })
+      .catch((e) => setError(e.message));
   }, []);
 
   function agregar(producto) {
@@ -53,7 +59,8 @@ function Inicio() {
             <Link to="/catalogo">Ver todos los productos</Link>
           </div>
           {mensaje && <p className="alert alert-success" role="status">{mensaje} <Link className="alert-link" to="/pedido">Ver carrito</Link></p>}
-          <ListaProductos productos={destacados} onAgregar={agregar} />
+          {error && <p className="alert alert-danger" role="alert">No se pudo cargar el catálogo: {error}</p>}
+          {!error && <ListaProductos productos={destacados} onAgregar={agregar} />}
         </section>
       </main>
     </>
