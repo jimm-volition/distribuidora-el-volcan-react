@@ -1,25 +1,37 @@
 import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import CampoFormulario from "../components/CampoFormulario";
+import { useAuth } from "../context/useAuth";
 import {
   validarEmail,
   validarPassword,
   validarNombre,
-  validarTelefono,
-  validarPassword2,
-  validarObligatorio
+  validarCelular,
+  normalizarCelular,
+  validarPassword2
 } from "../utils/validaciones";
 
+// Pagina de inicio de cada rol despues de ingresar, si no venia de una ruta protegida.
+const INICIO_POR_ROL = { ADMIN: "/admin/productos", VENDEDOR: "/ordenes", CLIENTE: "/catalogo" };
+
 function Login() {
+  const { usuario, avisoSesion, ingresar, registrar } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const desde = location.state?.desde;
+  const [enviando, setEnviando] = useState(false);
+
+  function irDespuesDeIngresar(usuarioIngresado) {
+    navigate(desde || INICIO_POR_ROL[usuarioIngresado.rol] || "/", { replace: true });
+  }
   const [login, setLogin] = useState({
     email: "",
-    password: "",
-    rol: ""
+    password: ""
   });
   
   const [erroresLogin, setErroresLogin] = useState({
     email: "",
-    password: "",
-    rol: ""
+    password: ""
   });
   
   const [mensajeLogin, setMensajeLogin] = useState("");
@@ -49,13 +61,13 @@ function Login() {
     });
   }
   
-  function manejarEnvioRegistro(evento) {
+  async function manejarEnvioRegistro(evento) {
     evento.preventDefault();
   
     const nuevosErrores = {
       nombre: validarNombre(registro.nombre),
       email: validarEmail(registro.email),
-      telefono: validarTelefono(registro.telefono),
+      telefono: validarCelular(registro.telefono),
       password: validarPassword(registro.password),
       password2: validarPassword2(registro.password2, registro.password)
     };
@@ -68,15 +80,22 @@ function Login() {
       setMensajeRegistro("Revisa los campos marcados.");
       return;
     }
-  
-    setMensajeRegistro("Cuenta creada. Ya puedes ingresar con tu correo.");
-    setRegistro({
-      nombre: "",
-      email: "",
-      telefono: "",
-      password: "",
-      password2: ""
-    });
+
+    setEnviando(true);
+    setMensajeRegistro("");
+    try {
+      const nuevo = await registrar({
+        nombre: registro.nombre.trim(),
+        correo: registro.email.trim(),
+        telefono: normalizarCelular(registro.telefono),
+        password: registro.password
+      });
+      irDespuesDeIngresar(nuevo);
+    } catch (error) {
+      setMensajeRegistro(error.message);
+    } finally {
+      setEnviando(false);
+    }
   }
   function manejarCambioLogin(campo, valor) {
     setLogin({
@@ -84,13 +103,12 @@ function Login() {
       [campo]: valor
     });
   }
-  function manejarEnvioLogin(evento) {
+  async function manejarEnvioLogin(evento) {
     evento.preventDefault();
   
     const nuevosErrores = {
       email: validarEmail(login.email),
-      password: validarPassword(login.password),
-      rol: validarObligatorio(login.rol)
+      password: validarPassword(login.password)
     };
   
     setErroresLogin(nuevosErrores);
@@ -101,14 +119,37 @@ function Login() {
       setMensajeLogin("Revisa los campos marcados.");
       return;
     }
-  
-    setMensajeLogin(`Ingreso correcto como ${login.rol}. Bienvenida/o, ${login.email}.`);
+
+    setEnviando(true);
+    setMensajeLogin("");
+    try {
+      const ingresado = await ingresar(login.email.trim(), login.password);
+      irDespuesDeIngresar(ingresado);
+    } catch (error) {
+      setMensajeLogin(error.message);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  if (usuario) {
+    return (
+      <main className="container py-4">
+        <h1>Ya iniciaste sesión</h1>
+        <p>Ingresaste como <strong>{usuario.nombre}</strong> ({usuario.correo}), rol {usuario.rol}.</p>
+        <Link to="/">Ir al inicio</Link>
+      </main>
+    );
   }
 
   return (
     <main className="container py-4">
       <h1>Ingreso al sistema</h1>
-  
+      {avisoSesion && <div className="alert alert-warning" role="alert">{avisoSesion}</div>}
+      {desde && !avisoSesion && (
+        <div className="alert alert-info" role="alert">Debes iniciar sesión para ver esa página.</div>
+      )}
+
       <div className="row g-4">
         <div className="col-12 col-md-6">
           <div className="card p-3 h-100">
@@ -131,25 +172,13 @@ function Login() {
                 error={erroresLogin.password}
                 ayuda="Mínimo 8 caracteres."
               />
-              <div className="mb-3">
-                <label htmlFor="rol" className="form-label fw-bold">Rol</label>
-                <select
-                  id="rol"
-                  className={`form-control ${erroresLogin.rol ? "is-invalid" : ""}`}
-                  value={login.rol}
-                  onChange={(evento) => manejarCambioLogin("rol", evento.target.value)}
-                >
-                  <option value="">Selecciona tu rol</option>
-                  <option value="administrador">Administradora</option>
-                  <option value="operadora">Operadora / Despachadora</option>
-                  <option value="repartidor">Repartidor</option>
-                  <option value="cliente">Cliente</option>
-                </select>
-                {erroresLogin.rol && (
-                  <div className="invalid-feedback">{erroresLogin.rol}</div>
-                )}
-              </div>
-              <button className="btn btn-dark" type="submit">Ingresar</button>
+              <button className="btn btn-dark" type="submit" disabled={enviando}>
+                {enviando ? "Ingresando..." : "Ingresar"}
+              </button>
+              <p className="form-text mt-3 mb-0">
+                Cuentas de prueba: admin@volcan.cl / Admin1234 · vendedor@volcan.cl / Vendedor1 · cliente@volcan.cl / Cliente123.
+                El rol lo asigna el servidor, no se elige en este formulario.
+              </p>
               {mensajeLogin && (
                 <p className="mt-3 fw-semibold">{mensajeLogin}</p>
               )}
@@ -200,7 +229,9 @@ function Login() {
                 onCambiar={manejarCambioRegistro}
                 error={erroresRegistro.password2}
               />
-              <button className="btn btn-dark" type="submit">Crear cuenta</button>
+              <button className="btn btn-dark" type="submit" disabled={enviando}>
+                {enviando ? "Creando cuenta..." : "Crear cuenta"}
+              </button>
               {mensajeRegistro && (
                 <p className="mt-3 fw-semibold">{mensajeRegistro}</p>
               )}

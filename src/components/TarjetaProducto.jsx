@@ -1,4 +1,5 @@
 import { formatearPrecio } from "../utils/precio";
+import SoloCompradores from "./SoloCompradores";
 
 function TarjetaProducto({ producto, onAgregar }) {
   return (
@@ -14,12 +15,14 @@ function TarjetaProducto({ producto, onAgregar }) {
         <h2 className="h5">{producto.nombre}</h2>
         <p className="small mb-1">Código: {producto.codigo}</p>
         <p className="fw-bold">{formatearPrecio(producto.precio)}</p>
-        <button
-          className="btn btn-dark mt-auto"
-          onClick={() => onAgregar(producto)}
-        >
-          Agregar al pedido
-        </button>
+        <SoloCompradores>
+          <button
+            className="btn btn-dark mt-auto"
+            onClick={() => onAgregar(producto)}
+          >
+            Agregar al pedido
+          </button>
+        </SoloCompradores>
       </div>
     </article>
   );
