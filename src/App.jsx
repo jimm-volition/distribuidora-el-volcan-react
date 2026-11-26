@@ -14,6 +14,7 @@ import Ordenes from "./pages/Ordenes";
 import RutaProtegida from "./components/RutaProtegida";
 import SoloCompradores from "./components/SoloCompradores";
 import AccesoDenegado from "./pages/AccesoDenegado";
+import AdminCategorias from "./pages/AdminCategorias";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/ordenes" element={<RutaProtegida roles={["ADMIN", "VENDEDOR", "CLIENTE"]}><Ordenes /></RutaProtegida>} />
         <Route path="/admin/productos" element={<RutaProtegida roles={["ADMIN"]}><AdminProductos /></RutaProtegida>} />
         <Route path="*" element={<NoEncontrada />} />
+        <Route path="/admin/categorias" element={<RutaProtegida roles={["ADMIN"]}><AdminCategorias /></RutaProtegida>} />
       </Routes>
       <PiePagina />
     </>
