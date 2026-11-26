@@ -16,3 +16,8 @@ export function registro(datos) {
 export function me(token) {
   return api(BASE, "/api/v1/auth/me", { token });
 }
+
+/** POST /api/v1/auth/refresh -> cambia un token todavia vigente por uno nuevo */
+export function refrescar(token) {
+  return api(BASE, "/api/v1/auth/refresh", { method: "POST", token });
+}

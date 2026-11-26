@@ -26,15 +26,26 @@ export function borrarSesion() {
   sessionStorage.removeItem(CLAVE_USUARIO);
 }
 
-/** Fecha de expiracion del JWT en milisegundos, o null si no se puede leer. No verifica la firma: eso lo hace el backend. */
-export function expiracionToken(token) {
+/** Lee el contenido (payload) del JWT. No verifica la firma: eso lo hace el backend. */
+function leerPayload(token) {
   try {
     const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(base64));
-    return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+    return JSON.parse(atob(base64));
   } catch {
     return null;
   }
+}
+
+/** Fecha de expiracion del JWT en milisegundos, o null si no se puede leer. */
+export function expiracionToken(token) {
+  const exp = leerPayload(token)?.exp;
+  return typeof exp === "number" ? exp * 1000 : null;
+}
+
+/** Hasta cuando se puede renovar la sesion (claim "sesionHasta"), en milisegundos, o null. */
+export function limiteSesion(token) {
+  const hasta = leerPayload(token)?.sesionHasta;
+  return typeof hasta === "number" ? hasta * 1000 : null;
 }
 
 export function tokenVencido(token) {

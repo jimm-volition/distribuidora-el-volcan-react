@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import SoloCompradores from "./SoloCompradores";
 
 function PiePagina() {
   return (
@@ -17,8 +18,11 @@ function PiePagina() {
             <h3 className="h5">Navegación</h3>
             <ul className="list-unstyled">
               <li><Link to="/catalogo">Catálogo</Link></li>
-              <li><Link to="/pedido">Pedido</Link></li>
-              <li><Link to="/nosotros">Nosotros</Link></li>
+              {/* Mismo criterio que el menu: la operadora no ve Pedido ni Nosotros */}
+              <SoloCompradores>
+                <li><Link to="/pedido">Pedido</Link></li>
+                <li><Link to="/nosotros">Nosotros</Link></li>
+              </SoloCompradores>
             </ul>
           </section>
           <section className="col-6 col-md-4">

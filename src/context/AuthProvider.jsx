@@ -6,11 +6,20 @@ import {
   expiracionToken,
   guardarSesion,
   leerSesion,
+  limiteSesion,
   tokenVencido,
 } from "../services/http";
-import { login as loginApi, me as meApi, registro as registroApi } from "../services/authService";
+import {
+  login as loginApi,
+  me as meApi,
+  refrescar as refrescarApi,
+  registro as registroApi,
+} from "../services/authService";
 
 const AVISO_EXPIRADA = "Tu sesión expiró. Vuelve a ingresar.";
+const AVISO_MAXIMO = "Tu sesión alcanzó el tiempo máximo de 8 horas. Vuelve a ingresar.";
+// Cuanto antes del vencimiento se renueva el token.
+const MARGEN_RENOVACION = 5 * 60 * 1000;
 
 // Al recargar (F5) la sesion se lee de sessionStorage de forma sincronica,
 // asi la pantalla no parpadea como "no logueado". Si el token ya vencio, se descarta.
@@ -57,23 +66,39 @@ export default function AuthProvider({ children }) {
     return () => window.removeEventListener(EVENTO_SESION_EXPIRADA, alExpirar);
   }, [cerrarSesion]);
 
-  // Si el token vence con la pestana abierta, se cierra la sesion en ese momento.
-  const token = sesion?.token;
-  useEffect(() => {
-    if (!token) return undefined;
-    const exp = expiracionToken(token);
-    if (exp === null) return undefined;
-    const id = setTimeout(() => cerrarSesion(AVISO_EXPIRADA), Math.max(exp - Date.now(), 0));
-    return () => clearTimeout(id);
-  }, [token, cerrarSesion]);
-
-  function guardar(respuesta) {
+  const guardar = useCallback((respuesta) => {
     const usuario = { correo: respuesta.correo, rol: respuesta.rol, nombre: respuesta.nombre };
     guardarSesion(respuesta.token, usuario);
     setSesion({ token: respuesta.token, usuario });
     setAvisoSesion("");
     return usuario;
-  }
+  }, []);
+
+  // Renovacion del token con la pestana abierta:
+  //  - MARGEN_RENOVACION antes de que venza se pide uno nuevo a POST /refresh.
+  //  - Si el servidor lo rechaza (401), http.js dispara EVENTO_SESION_EXPIRADA y se cierra la sesion.
+  //  - Si la sesion llego a su maximo (8 h desde el login), ya no se renueva y se cierra al vencer.
+  //  - Respaldo: si la renovacion falla por red, la sesion se cierra igual a la hora de vencimiento.
+  const token = sesion?.token;
+  useEffect(() => {
+    if (!token) return undefined;
+    const exp = expiracionToken(token);
+    if (exp === null) return undefined;
+    const limite = limiteSesion(token);
+    const ultimoToken = limite !== null && exp >= limite;
+    const restante = Math.max(exp - Date.now(), 0);
+
+    const temporizadores = [
+      setTimeout(() => cerrarSesion(ultimoToken ? AVISO_MAXIMO : AVISO_EXPIRADA), restante),
+    ];
+    if (!ultimoToken) {
+      const espera = Math.max(restante - MARGEN_RENOVACION, restante / 2);
+      temporizadores.push(setTimeout(() => {
+        refrescarApi(token).then(guardar).catch(() => {});
+      }, espera));
+    }
+    return () => temporizadores.forEach(clearTimeout);
+  }, [token, cerrarSesion, guardar]);
 
   async function ingresar(correo, password) {
     return guardar(await loginApi(correo, password));
