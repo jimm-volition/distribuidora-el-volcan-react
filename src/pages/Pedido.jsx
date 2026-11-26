@@ -24,6 +24,7 @@ function Pedido() {
   const [confirmacion, setConfirmacion] = useState(null);
   const [errores, setErrores] = useState({});
   const [error, setError] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   const validadores = {
     nombre: validarNombre,
@@ -52,6 +53,7 @@ function Pedido() {
 
   async function manejarEnvio(evento) {
     evento.preventDefault();
+    if (enviando) return;
 
     const nuevosErrores = Object.fromEntries(
       Object.entries(validadores).map(([campo, validar]) => [campo, validar(cliente[campo])]),
@@ -71,30 +73,32 @@ function Pedido() {
 
     let numeroPedido = `EV-${Date.now().toString().slice(-8)}`;
     let totalConfirmado = total;
-    if (import.meta.env.VITE_API_URL) {
+    const pedidoEnServidor = Boolean(import.meta.env.VITE_API_URL);
+    if (pedidoEnServidor) {
       const usuario = leerSesion()?.usuario;
       if (!usuario || (usuario.rol !== "CLIENTE" && usuario.rol !== "ADMIN")) {
         setError("Inicia sesión como cliente para registrar la boleta en el servidor.");
         return;
       }
+      setEnviando(true);
       try {
         const boleta = await crearBoleta({
-          nombre: cliente.nombre,
-          telefono: cliente.telefono,
-          direccion: cliente.direccion,
-          comuna: cliente.comuna,
-          referencia: cliente.referencia,
-          pago: cliente.pago,
-          items: items.map((item) => ({ codigo: item.codigo, cantidad: item.cantidad })),
+          nombreCliente: cliente.nombre.trim(),
+          direccion: cliente.direccion.trim(),
+          comuna: cliente.comuna.trim(),
+          tipoPrecio: "RESIDENCIAL",
+          detalles: items.map((item) => ({ codigoProducto: item.codigo, cantidad: item.cantidad })),
         });
         numeroPedido = `Boleta #${boleta.id}`;
         totalConfirmado = boleta.total;
       } catch (e) {
         setError(e.message);
         return;
+      } finally {
+        setEnviando(false);
       }
     }
-    setConfirmacion({ numero: numeroPedido, nombre: cliente.nombre, total: totalConfirmado, cantidad: cantidadTotal });
+    setConfirmacion({ numero: numeroPedido, nombre: cliente.nombre, total: totalConfirmado, cantidad: cantidadTotal, real: pedidoEnServidor });
     vaciarCarrito();
     setCliente(formularioInicial);
     setErrores({});
@@ -108,13 +112,13 @@ function Pedido() {
         <section className="confirmacion-pedido text-center p-4 p-md-5" role="status">
           <div className="confirmacion-icono" aria-hidden="true">✓</div>
           <h1 className="h2 mt-3">¡Gracias por tu pedido, {confirmacion.nombre}!</h1>
-          <p className="lead">Tu pedido quedó preparado en esta demostración.</p>
+          <p className="lead">{confirmacion.real ? "Tu pedido quedó registrado correctamente." : "Tu pedido quedó preparado en esta demostración."}</p>
           <div className="confirmacion-resumen mx-auto my-4">
             <p className="mb-2">Número de referencia: <strong>{confirmacion.numero}</strong></p>
             <p className="mb-2">Productos: <strong>{confirmacion.cantidad}</strong></p>
             <p className="mb-0">Total: <strong>{formatearPrecio(confirmacion.total)}</strong></p>
           </div>
-          <p className="text-muted small">La boleta quedó registrada con el total calculado por el servidor y el stock descontado.</p>
+          {confirmacion.real && <p className="text-muted small">El total fue calculado por el servidor y el stock quedó actualizado.</p>}
           <div className="d-flex flex-wrap justify-content-center gap-2 mt-4">
             <Link className="btn btn-dark" to="/catalogo" onClick={() => setConfirmacion(null)}>Seguir comprando</Link>
             <Link className="btn btn-outline-dark" to="/" onClick={() => setConfirmacion(null)}>Volver al inicio</Link>
@@ -228,8 +232,8 @@ function Pedido() {
                 <strong>{formatearPrecio(total)}</strong>
               </div>
               {error && <p className="alert alert-danger py-2" role="alert">{error}</p>}
-              <button type="submit" className="btn btn-dark btn-lg w-100" disabled={items.length === 0}>
-                Confirmar pedido
+              <button type="submit" className="btn btn-dark btn-lg w-100" disabled={items.length === 0 || enviando}>
+                {enviando ? "Registrando pedido..." : "Confirmar pedido"}
               </button>
               {items.length === 0 && <p className="form-text mt-2 mb-0">Tu carrito debe tener productos para continuar.</p>}
             </form>
