@@ -10,9 +10,7 @@ import {
   normalizarCelular,
   validarPassword2
 } from "../utils/validaciones";
-
-// Pagina de inicio de cada rol despues de ingresar, si no venia de una ruta protegida.
-const INICIO_POR_ROL = { ADMIN: "/admin/productos", VENDEDOR: "/ordenes", CLIENTE: "/catalogo" };
+import { destinoDespuesDeIngresar } from "../utils/permisos";
 
 function Login() {
   const { usuario, avisoSesion, ingresar, registrar } = useAuth();
@@ -22,7 +20,7 @@ function Login() {
   const [enviando, setEnviando] = useState(false);
 
   function irDespuesDeIngresar(usuarioIngresado) {
-    navigate(desde || INICIO_POR_ROL[usuarioIngresado.rol] || "/", { replace: true });
+    navigate(destinoDespuesDeIngresar(desde, usuarioIngresado.rol), { replace: true });
   }
   const [login, setLogin] = useState({
     email: "",
