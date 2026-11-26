@@ -1,10 +1,17 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { productos } from "../data/productos";
+import { buscarProducto } from "../services/productoService";
 import { formatearPrecio } from "../utils/precio";
 
 function DetalleProducto() {
   const { codigo } = useParams();
-  const producto = productos.find((item) => item.codigo === codigo);
+  const [producto, setProducto] = useState(() => productos.find((item) => item.codigo === codigo) || null);
+
+  useEffect(() => {
+    if (!import.meta.env.VITE_API_URL) return;
+    buscarProducto(codigo).then(setProducto).catch(() => setProducto(null));
+  }, [codigo]);
 
   if (!producto) {
     return (
