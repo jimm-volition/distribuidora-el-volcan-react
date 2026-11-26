@@ -58,6 +58,22 @@ export function validarTelefono(valor) {
   return "";
 }
 
+/** Celular chileno: 9 XXXX XXXX, con o sin +56. Es la misma regla que aplica Auth en el registro. */
+export function validarCelular(valor) {
+  const texto = (valor || "").trim();
+  if (!texto) return "Este campo es obligatorio.";
+  if (!/^(\+?56)?9\d{8}$/.test(texto.replace(/[\s-]/g, ""))) {
+    return "Ingresa un celular válido (+56 9 XXXX XXXX).";
+  }
+  return "";
+}
+
+/** Deja el celular como +569XXXXXXXX antes de enviarlo a la API. */
+export function normalizarCelular(valor) {
+  const digitos = (valor || "").replace(/\D/g, "");
+  return `+56${digitos.slice(-9)}`;
+}
+
 export function validarMinimo(valor, minimo = 10) {
   const texto = (valor || "").trim();
   if (!texto) return "Este campo es obligatorio.";

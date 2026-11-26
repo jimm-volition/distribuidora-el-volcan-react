@@ -9,14 +9,14 @@ import Nosotros from "./pages/Nosotros";
 import Login from "./pages/Login";
 import Contacto from "./pages/Contacto";
 import NoEncontrada from "./pages/NoEncontrada";
-import { useCarrito } from "./context/useCarrito";
+import AdminProductos from "./pages/AdminProductos";
+import Ordenes from "./pages/Ordenes";
+import RutaProtegida from "./components/RutaProtegida";
 
 function App() {
-  const { cantidadTotal } = useCarrito();
-
   return (
     <>
-      <Navegacion cantidadCarrito={cantidadTotal} />
+      <Navegacion />
       <Routes>
         <Route path="/" element={<Inicio />} />
         <Route path="/catalogo" element={<Catalogo />} />
@@ -25,6 +25,8 @@ function App() {
         <Route path="/nosotros" element={<Nosotros />} />
         <Route path="/login" element={<Login />} />
         <Route path="/contacto" element={<Contacto />} />
+        <Route path="/ordenes" element={<RutaProtegida roles={["ADMIN", "VENDEDOR", "CLIENTE"]}><Ordenes /></RutaProtegida>} />
+        <Route path="/admin/productos" element={<RutaProtegida roles={["ADMIN"]}><AdminProductos /></RutaProtegida>} />
         <Route path="*" element={<NoEncontrada />} />
       </Routes>
       <PiePagina />
